@@ -1,85 +1,78 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { MarkdownView, Notice, Plugin, TFile } from 'obsidian';
+import { NSPublishSettings, DEFAULT_SETTINGS } from './Source/types';
+import { NoteCopier } from './Source/NoteCopier';
+import { NSPublishSettingTab } from './Source/SettingsTab';
 
-// Remember to rename these classes and interfaces!
-
-interface MyPluginSettings {
-	mySetting: string;
-}
-
-const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default'
-}
-
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+export default class NSPublishPlugin extends Plugin {
+	settings: NSPublishSettings;
+	private noteCopier: NoteCopier;
 
 	async onload() {
 		await this.loadSettings();
 
-		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('dice', 'Sample Plugin', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-		});
-		// Perform additional things with the ribbon
-		ribbonIconEl.addClass('my-plugin-ribbon-class');
+		// Initialize the note copier with current settings
+		this.noteCopier = new NoteCopier(this.app, this.settings);
 
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status Bar Text');
+		// Add ribbon icon
+		const ribbonIconEl = this.addRibbonIcon('paper-plane', 'NS Publish', (evt: MouseEvent) => {
+			this.publishCurrentNote();
+		});
+		ribbonIconEl.addClass('ns-publish-ribbon-class');
 
-		// This adds a simple command that can be triggered anywhere
+		// Main command to publish current note with linked notes
 		this.addCommand({
-			id: 'open-sample-modal-simple',
-			name: 'Open sample modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
-			}
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'sample-editor-command',
-			name: 'Sample editor command',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				console.log(editor.getSelection());
-				editor.replaceSelection('Sample Editor Command');
-			}
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-sample-modal-complex',
-			name: 'Open sample modal (complex)',
+			id: 'publish-current-note',
+			name: 'Publish current note with linked notes',
 			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
+				const activeFile = this.app.workspace.getActiveFile();
+				if (activeFile && activeFile.extension === 'md') {
 					if (!checking) {
-						new SampleModal(this.app).open();
+						this.publishCurrentNote();
 					}
-
-					// This command will only show up in Command Palette when the check function returns true
 					return true;
 				}
+				return false;
 			}
 		});
 
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
-
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			console.log('click', evt);
+		// Command to publish current note only (without linked notes)
+		this.addCommand({
+			id: 'publish-current-note-only',
+			name: 'Publish current note only',
+			checkCallback: (checking: boolean) => {
+				const activeFile = this.app.workspace.getActiveFile();
+				if (activeFile && activeFile.extension === 'md') {
+					if (!checking) {
+						this.publishCurrentNoteOnly();
+					}
+					return true;
+				}
+				return false;
+			}
 		});
 
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+		// Command to show publishing statistics
+		this.addCommand({
+			id: 'show-publish-stats',
+			name: 'Show publishing statistics',
+			checkCallback: (checking: boolean) => {
+				const activeFile = this.app.workspace.getActiveFile();
+				if (activeFile && activeFile.extension === 'md') {
+					if (!checking) {
+						this.showPublishingStats();
+					}
+					return true;
+				}
+				return false;
+			}
+		});
+
+		// Add settings tab
+		this.addSettingTab(new NSPublishSettingTab(this.app, this));
 	}
 
 	onunload() {
-
+		// Clean up when plugin is disabled
 	}
 
 	async loadSettings() {
@@ -88,47 +81,105 @@ export default class MyPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
-	}
-}
-
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
+		// Update the note copier with new settings
+		if (this.noteCopier) {
+			this.noteCopier.updateSettings(this.settings);
+		}
 	}
 
-	onOpen() {
-		const {contentEl} = this;
-		contentEl.setText('Woah!');
+	/**
+	 * Publish the current note with linked notes (main action)
+	 */
+	async publishCurrentNote() {
+		const activeFile = this.app.workspace.getActiveFile();
+		if (!activeFile) {
+			new Notice('No active file to publish');
+			return;
+		}
+
+		try {
+			const result = await this.noteCopier.publishNote(activeFile, {
+				includeLinked: this.settings.includeLinkedNotes,
+				maxDepth: this.settings.maxDepth,
+				excludePatterns: this.settings.excludePatterns
+			});
+
+			if (result.errors.length > 0) {
+				new Notice(`Published with ${result.errors.length} error(s). Check console for details.`);
+			}
+
+		} catch (error) {
+			console.error('Error in publishCurrentNote:', error);
+			new Notice(`Failed to publish: ${error.message}`);
+		}
 	}
 
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
+	/**
+	 * Publish only the current note without following links
+	 */
+	async publishCurrentNoteOnly() {
+		const activeFile = this.app.workspace.getActiveFile();
+		if (!activeFile) {
+			new Notice('No active file to publish');
+			return;
+		}
+
+		try {
+			const result = await this.noteCopier.publishNote(activeFile, {
+				includeLinked: false
+			});
+
+			if (result.errors.length > 0) {
+				new Notice(`Published with ${result.errors.length} error(s). Check console for details.`);
+			}
+
+		} catch (error) {
+			console.error('Error in publishCurrentNoteOnly:', error);
+			new Notice(`Failed to publish: ${error.message}`);
+		}
 	}
-}
 
-class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+	/**
+	 * Show statistics about what would be published
+	 */
+	async showPublishingStats() {
+		const activeFile = this.app.workspace.getActiveFile();
+		if (!activeFile) {
+			new Notice('No active file selected');
+			return;
+		}
 
-	constructor(app: App, plugin: MyPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
+		try {
+			const stats = await this.noteCopier.getPublishingStats(
+				activeFile, 
+				this.settings.includeLinkedNotes
+			);
 
-	display(): void {
-		const {containerEl} = this;
+			const sizeKB = Math.round(stats.estimatedSize / 1024 * 100) / 100;
+			
+			let message = `Publishing Statistics:\n`;
+			message += `• Total files: ${stats.totalFiles}\n`;
+			message += `• Main file: ${activeFile.name}\n`;
+			message += `• Linked files: ${stats.linkedFiles.length}\n`;
+			message += `• Estimated size: ${sizeKB} KB\n`;
+			
+			if (stats.linkedFiles.length > 0) {
+				message += `\nLinked files:\n`;
+				stats.linkedFiles.slice(0, 10).forEach(file => {
+					message += `  - ${file.name}\n`;
+				});
+				
+				if (stats.linkedFiles.length > 10) {
+					message += `  ... and ${stats.linkedFiles.length - 10} more\n`;
+				}
+			}
 
-		containerEl.empty();
+			new Notice(message, 8000);
+			console.log('Publishing stats:', stats);
 
-		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
-			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.mySetting)
-				.onChange(async (value) => {
-					this.plugin.settings.mySetting = value;
-					await this.plugin.saveSettings();
-				}));
+		} catch (error) {
+			console.error('Error getting publishing stats:', error);
+			new Notice(`Error calculating stats: ${error.message}`);
+		}
 	}
 }
