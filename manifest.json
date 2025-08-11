@@ -3,7 +3,7 @@
 	"name": "NS Publish",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Copy current note and linked notes to another vault with recursive wikilink resolution",
+	"description": "Publish notes with linked files, Excalidraw image conversion, and automatic URL sharing to clipboard",
 	"author": "NS Developer",
 	"authorUrl": "",
 	"isDesktopOnly": false

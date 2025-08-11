@@ -1,94 +1,145 @@
-# Obsidian Sample Plugin
+# NS Publish - Obsidian Plugin
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+A powerful Obsidian plugin that enables seamless note publishing with automatic link resolution, Excalidraw image conversion, and instant URL sharing.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+## ✨ Features
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open Sample Modal" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+### 📝 Smart Note Publishing
+- **Publish with Links**: Automatically copy the current note and all linked notes recursively
+- **Publish Only**: Copy just the current note without following links
+- **Configurable Depth**: Set maximum recursion depth to control publishing scope
+- **Folder Structure**: Preserve or flatten folder hierarchy as needed
 
-## First time developing plugins?
+### 🎨 Excalidraw Integration
+- **Automatic Detection**: Intelligently identifies Excalidraw files in wikilinks
+- **Image Conversion**: Converts Excalidraw drawings to PNG images automatically
+- **Organized Storage**: Places generated images in `_Image` subfolder
+- **Link Preservation**: Maintains display text and formatting from original links
+- **Exclusion**: Automatically excludes original Excalidraw files from publishing
 
-Quick starting guide for new plugin devs:
+### 🔗 Instant URL Sharing
+- **Automatic Clipboard Copy**: Generated URLs are immediately copied to clipboard after successful publishing
+- **URL-Friendly Conversion**: Converts file names to web-compatible format (`spaces → hyphens`, `& → --and--`)
+- **Configurable Base URL**: Set your server's base URL for consistent link generation
+- **Smart Notifications**: Visual feedback showing the copied URL
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+### ⚙️ Advanced Configuration
+- **Exclude Patterns**: Use regex patterns to exclude specific files from linking
+- **File Prefixes**: Optional prefixes for published files
+- **Target Path Validation**: Prevents path traversal and ensures vault safety
+- **Publishing Statistics**: Preview what files will be published before execution
 
-## Releasing new releases
+## 🚀 Installation
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+### Manual Installation
+1. Download the latest release files (`main.js`, `manifest.json`, `styles.css`)
+2. Create a folder `obsidian-ns-publish` in your vault's `.obsidian/plugins/` directory
+3. Place the downloaded files in the created folder
+4. Enable the plugin in Obsidian's Community Plugins settings
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+## 📖 Usage
 
-## Adding your plugin to the community plugin list
+### Basic Publishing
+1. Open any note you want to publish
+2. Use the ribbon icon (📁) or command palette
+3. Choose between:
+   - **Publish with Links**: Includes all linked notes recursively
+   - **Publish Only**: Just the current note
+   - **Show Statistics**: Preview publishing scope
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+### Configuration
+Access plugin settings to configure:
+- **Target Folder Path**: Where published files will be stored
+- **Base URL**: Your server URL for automatic link generation
+- **Max Depth**: Maximum recursion depth for linked notes
+- **Exclude Patterns**: Regex patterns to skip specific files
+- **Folder Structure**: Preserve or flatten directory hierarchy
 
-## How to use
+### URL Sharing
+After successful publishing:
+1. The generated URL is automatically copied to your clipboard
+2. A notification shows the copied URL
+3. Share the link immediately with others
 
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+## 🎯 Example Workflow
 
-## Manually installing the plugin
+1. **Write** your note with Excalidraw drawings and wikilinks
+2. **Publish** using the plugin (automatic Excalidraw → PNG conversion)
+3. **Share** the instantly generated URL from your clipboard
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+**Input**: `100_UnrealEngine/언리얼 충돌 시스템 & Hit Location.md`
+**Output URL**: `http://your-server.com/100_UnrealEngine/언리얼-충돌-시스템--and--Hit-Location`
 
-## Improve code quality with eslint (optional)
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- To use eslint with this project, make sure to install eslint from terminal:
-  - `npm install -g eslint`
-- To use eslint to analyze this project use this command:
-  - `eslint main.ts`
-  - eslint will then create a report with suggestions for code improvement by file and line number.
-- If your source code is in a folder, such as `src`, you can use eslint with this command to analyze all files in that folder:
-  - `eslint .\src\`
+## ⚙️ Settings Reference
 
-## Funding URL
+| Setting | Description | Default |
+|---------|-------------|---------|
+| Target Folder Path | Destination folder within vault | `700_Publish` |
+| Include Linked Notes | Follow wikilinks recursively | `true` |
+| Max Depth | Maximum recursion depth | `5` |
+| Preserve Folder Structure | Maintain directory hierarchy | `true` |
+| Add Publish Prefix | Add prefix to published files | `false` |
+| Exclude Patterns | Regex patterns to exclude | `[]` |
+| Base URL | Server URL for link generation | `http://172.28.35.242:8080` |
 
-You can include funding URLs where people who use your plugin can financially support it.
+## 🛠️ Technical Details
 
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
+### Excalidraw Processing
+- Detects files with `excalidraw-plugin: parsed` frontmatter
+- Supports embedded files and complex drawings
+- Generates high-quality PNG exports
+- Handles naming conflicts automatically
 
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
+### URL Generation
+- Converts spaces to hyphens for web compatibility
+- Transforms `&` symbols to `--and--`
+- Properly encodes non-ASCII characters
+- Excludes target folder path from URLs
+
+### Safety Features
+- Path traversal prevention
+- Comprehensive error handling
+- Graceful degradation on failures
+- Detailed logging for troubleshooting
+
+## 🔧 Development
+
+### Build from Source
+```bash
+npm install
+npm run dev    # Development build with watch
+npm run build  # Production build
 ```
 
-If you have multiple URLs, you can also do:
-
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
+### File Structure
+```
+Source/
+├── main.ts           # Plugin entry point
+├── NoteCopier.ts     # Core publishing logic
+├── WikilinkParser.ts # Link resolution engine
+├── ExcalidrawUtil.ts # Drawing conversion
+├── SettingsTab.ts    # Configuration UI
+└── types.ts          # Type definitions
 ```
 
-## API Documentation
+## 📄 License
 
-See https://github.com/obsidianmd/obsidian-api
+This project is open source and available under the MIT License.
+
+## 🤝 Contributing
+
+Contributions, issues, and feature requests are welcome!
+
+## 📋 Changelog
+
+### Version 1.0.0
+- Initial release
+- Smart note publishing with recursive link resolution
+- Excalidraw to PNG conversion
+- Automatic URL generation and clipboard sharing
+- Comprehensive settings and exclusion patterns
+- Production-ready with full error handling
+
+---
+
+**Happy Publishing!** 🚀

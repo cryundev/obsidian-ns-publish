@@ -1,0 +1,10 @@
+{
+	"id": "obsidian-ns-publish",
+	"name": "NS Publish",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "Publish notes with linked files, Excalidraw image conversion, and automatic URL sharing to clipboard",
+	"author": "NS Developer",
+	"authorUrl": "",
+	"isDesktopOnly": false
+}
